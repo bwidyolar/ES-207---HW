@@ -1,0 +1,220 @@
+---
+output: html_document
+---
+<p align="right">Bennett Widyolar<br>
+ES 207 - HW #4<br>
+3/7/2016</p>
+
+<center>
+# Homework Assignment 4
+</center>
+
+## Objective
+In this study I will examine the relationship between plant height versus breast height diameter, develop linear models to explain this relationship both by each genus and by test site, and evaluate which model is best.
+
+## Methods
+I will be using R as the programming language to analylze the data and develop linear models, and using the analysis of variance and analylsis of covariance to determine which of the models best explains the relationship.
+
+## Data
+The data for this study came from the ES 207 HW2 folder. Species name, woody stem diameter and height were collected along with longitude and latitude data. This data is ultimately to be used to estimate carbon density at each site.
+
+## Code
+The code for this project is as follows:
+
+```{r, eval=FALSE}
+#CLEAR VARIABLES
+rm(list=ls())
+
+#LOAD DATA
+rip <- read.csv("top5_dataset.csv")
+#CLEAN DATA OF NULL VALUES
+rip <- rip[-c(which(rip$Woody_Height_m < 0)), ]
+rip <- rip[-c(which(rip$Woody_DBH_cm < 5)), ]
+#ADD HEIGHT AS CM
+rip$htcm <- rip$Woody_Height_m * 100  #CONVERT TO CM
+
+#riparian data loaded as rip 
+rip$projplot <- as.factor(paste(rip$ProjCode,rip$Plot.Name)) 
+
+#use tapply() to cycle through each project plot and generate stats 
+#where ‘htcm’ is height in cm 
+ripsum <- data.frame(cbind(tapply(rip$htcm,rip$projplot,mean),tapply(rip$htcm,rip$projplot,sd),tapply(rip$htcm,rip$projplot,length))) 
+
+#add column names #(height mean, height standard deviation, number of plots) 
+colnames(ripsum) <- c("htcmmn","htcmsd","plot.n") 
+
+#add a projplot column (from row names) to ripsum 
+ripsum$projplot <- as.factor(rownames(ripsum))
+
+#subset for plots with more than one measurement 
+ripsum <- ripsum[ripsum$plot.n > 1,] 
+#create proj column by stripping out the first 5 characters 
+ripsum$proj <- as.factor(substr(ripsum$projplot,1,5))
+
+#create list of project sites 
+projlevels <- levels(ripsum$proj) 
+
+#compare a ‘for’ loop of summary 
+#for (p in 1:length(projlevels)) print(summary(ripsum[ripsum$proj == projlevels[p],])) 
+#with a summary using lapply() (known as list apply) 
+#print(lapply(projlevels, function(x) summary(ripsum[ripsum$proj == x,])))
+
+#note that there are several ways of doing this task, but 
+#lapply() uses a list and a function to execute list items 
+#>> lapply(list, function(x) myfunction(x)) 
+#here we subset using which() where we select for x in list 
+#and then subset again randomly using sample() 
+#because these row subsets are from the vectorized data.frame 
+#it looks like this: data[which(),][sample(),] where [rows,cols] 
+
+nsamples <- 6 
+ripres <- lapply(projlevels, function(x) ripsum[which(ripsum$proj == x),][sample(nrow(ripsum[which(ripsum$proj == x),]),nsamples),]) 
+
+# combine samples by row using rbind() 
+# and by calling ripres lapply function from do.call() 
+
+ripsample <- do.call(rbind,ripres)
+#summary(ripsample$proj)
+
+#calculate CV using with(data,calc)
+ripsample$cv <- with(ripsample,htcmsd / htcmmn)
+
+#ANOVA
+rip.proj.cv.aov = aov(cv~proj,data=ripsample)
+print(summary(rip.proj.cv.aov))
+
+rip.aov.hsd <- TukeyHSD(rip.proj.cv.aov)
+print(rip.aov.hsd)
+
+#ANCOVA
+ripLM <- lm(formula = htcm ~ Woody_DBH_cm, data=rip)
+ripLM2 <- lm(formula = htcm ~ Woody_DBH_cm + Genus, data=rip)
+ripLM3 <- lm(formula = htcm ~ Woody_DBH_cm + ProjCode, data=rip)
+
+#print(summary.lm(ripLM2))
+
+#install.packages("HH")
+#library(HH)
+
+ancovaplot(htcm ~ Woody_DBH_cm + Genus, data=rip)
+```
+
+## Results
+
+```{r, echo=FALSE}
+#CLEAR VARIABLES
+rm(list=ls())
+
+#LOAD DATA
+rip <- read.csv("top5_dataset.csv")
+#CLEAN DATA OF NULL VALUES
+rip <- rip[-c(which(rip$Woody_Height_m < 0)), ]
+rip <- rip[-c(which(rip$Woody_DBH_cm < 5)), ]
+#ADD HEIGHT AS CM
+rip$htcm <- rip$Woody_Height_m * 100  #CONVERT TO CM
+
+#riparian data loaded as rip 
+rip$projplot <- as.factor(paste(rip$ProjCode,rip$Plot.Name)) 
+
+#use tapply() to cycle through each project plot and generate stats 
+#where ‘htcm’ is height in cm 
+ripsum <- data.frame(cbind(tapply(rip$htcm,rip$projplot,mean),tapply(rip$htcm,rip$projplot,sd),tapply(rip$htcm,rip$projplot,length))) 
+
+#add column names #(height mean, height standard deviation, number of plots) 
+colnames(ripsum) <- c("htcmmn","htcmsd","plot.n") 
+
+#add a projplot column (from row names) to ripsum 
+ripsum$projplot <- as.factor(rownames(ripsum))
+
+#subset for plots with more than one measurement 
+ripsum <- ripsum[ripsum$plot.n > 1,] 
+#create proj column by stripping out the first 5 characters 
+ripsum$proj <- as.factor(substr(ripsum$projplot,1,5))
+
+#create list of project sites 
+projlevels <- levels(ripsum$proj) 
+
+#compare a ‘for’ loop of summary 
+#for (p in 1:length(projlevels)) print(summary(ripsum[ripsum$proj == projlevels[p],])) 
+#with a summary using lapply() (known as list apply) 
+#print(lapply(projlevels, function(x) summary(ripsum[ripsum$proj == x,])))
+
+#note that there are several ways of doing this task, but 
+#lapply() uses a list and a function to execute list items 
+#>> lapply(list, function(x) myfunction(x)) 
+#here we subset using which() where we select for x in list 
+#and then subset again randomly using sample() 
+#because these row subsets are from the vectorized data.frame 
+#it looks like this: data[which(),][sample(),] where [rows,cols] 
+
+nsamples <- 6 
+ripres <- lapply(projlevels, function(x) ripsum[which(ripsum$proj == x),][sample(nrow(ripsum[which(ripsum$proj == x),]),nsamples),]) 
+
+# combine samples by row using rbind() 
+# and by calling ripres lapply function from do.call() 
+
+ripsample <- do.call(rbind,ripres)
+#summary(ripsample$proj)
+
+#calculate CV using with(data,calc)
+ripsample$cv <- with(ripsample,htcmsd / htcmmn)
+
+#ANOVA
+rip.proj.cv.aov = aov(cv~proj,data=ripsample)
+print(summary(rip.proj.cv.aov))
+```
+
+The ANOVA (analysis of variance) results are listed above.
+The critical F-value required to test the hypothesis (that tree height varies as a function of project site) at a 95% confidence interval is 3.09.
+Thus, since the calculated value is lower than this, I can conclude there is no significant difference among project site tree height means ~ i.e. there is no significant influence of project site on tree height.
+
+```{r, echo=FALSE}
+rip.aov.hsd <- TukeyHSD(rip.proj.cv.aov)
+print(rip.aov.hsd)
+```
+
+The Tukey Test, listed above, shows project site differences (the biggest difference is between NAPSO and all other sites)
+
+Analysis of covariance results are listed below.
+
+For the relationship: height ~ dbh
+```{r, echo=FALSE}
+#ANCOVA
+ripLM <- lm(formula = htcm ~ Woody_DBH_cm, data=rip)
+ripLM2 <- lm(formula = htcm ~ Woody_DBH_cm + Genus, data=rip)
+ripLM3 <- lm(formula = htcm ~ Woody_DBH_cm + ProjCode, data=rip)
+
+print(summary.lm(ripLM))
+```
+
+For the relationship: height ~ dbh + Genus
+```{r, echo=FALSE}
+#ANCOVA
+print(summary.lm(ripLM2))
+```
+
+For the relationship: height ~ dbh + Project Site
+```{r, echo=FALSE}
+#ANCOVA
+print(summary.lm(ripLM3))
+```
+
+From these we can see the model with Genus as a factor (height ~ DBH + Genus) had a better R squared value  than the both the minimial adequate model (height ~ DBH) and the model with site as a factor (height ~ DBH + Project Site)
+
+Lastly is the ANCOVA plot by Genus.
+(IGNORE THE OUTPUT FROM LOADING THE LIBRARY "HH")
+
+```{r, echo=FALSE}
+#install.packages("HH")
+library(HH)
+ancovaplot(htcm ~ Woody_DBH_cm + Genus, data=rip)
+```
+
+## Discussion
+Based on these results, I recommend using the model of tree height vs dbh as a function of genus.
+
+Looking at the difference between genera, it looks as though Acer and Salix are fairly equivalent, while Populus will overestimate and Quercus will slightly underestimate this relationship.
+
+## Limitations
+Simplification: I am performing this analysis based on the 4 most common genera from the entire species list, and further narrowing my recommendation down to 2 species and 1 site.
+Data: The woody dbh does not measure anything less than 1 cm and the woody height does not measure less than 0.034 meters.

@@ -49,8 +49,8 @@ ripres <- lapply(projlevels, function(x) ripsum[which(ripsum$proj == x),][sample
 # combine samples by row using rbind() 
 # and by calling ripres lapply function from do.call() 
 
-ripsample <- do.call(rbind,ripres) 
-summary(ripsample$proj)
+ripsample <- do.call(rbind,ripres)
+#summary(ripsample$proj)
 
 #calculate CV using with(data,calc)
 ripsample$cv <- with(ripsample,htcmsd / htcmmn)
@@ -59,9 +59,17 @@ ripsample$cv <- with(ripsample,htcmsd / htcmmn)
 rip.proj.cv.aov = aov(cv~proj,data=ripsample)
 print(summary(rip.proj.cv.aov))
 
-#print(summary.lm(rip.proj.cv.aov))
-
 rip.aov.hsd <- TukeyHSD(rip.proj.cv.aov)
-#print(rip.aov.hsd)
+print(rip.aov.hsd)
 
-#
+#ANCOVA
+ripLM <- lm(formula = htcm ~ Woody_DBH_cm, data=rip)
+ripLM2 <- lm(formula = htcm ~ Woody_DBH_cm + Genus, data=rip)
+ripLM3 <- lm(formula = htcm ~ Woody_DBH_cm + ProjCode, data=rip)
+
+#print(summary.lm(ripLM2))
+
+#install.packages("HH")
+#library(HH)
+
+ancovaplot(htcm ~ Woody_DBH_cm + Genus, data=rip)
