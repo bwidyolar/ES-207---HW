@@ -1,0 +1,254 @@
+---
+output: html_document
+---
+<p align="right">Bennett Widyolar<br>
+ES 207 - HW #5<br>
+3/23/2016</p>
+
+<center>
+# Homework Assignment 5
+</center>
+
+## Objective
+In this study I use my previous studies on the relationship between plant height versus breast height diameter to estimate above-ground carbon stocks in riparian areas.
+
+## Methods
+I will be using R as the programming language to analylze the data, develop linear models, and select the most appropriate model. I will look at the effects of additional factors: latitude, elevation, temperature, and precipitation, to see if these improve the models.
+
+## Data
+The data for this study came from the ES 207 HW2 folder. Species name, woody stem diameter and height were collected along with longitude and latitude data. This data is ultimately to be used to estimate carbon density at each site.
+
+Raster data showing elevation in California as well as temperature and precipitation values for August of some year are used.
+
+## Code
+The code for this project is as follows:
+
+```{r, eval=FALSE}
+#CLEAR VARIABLES
+rm(list=ls())
+
+#install.packages("rgdal")
+library(rgdal)
+#install.packages("raster")
+library(raster)
+
+#LOAD DATA
+rip <- read.csv("riparian_cleaned.csv")
+
+#SORT OUT ONLY TOP 5 SPECIES
+top5 <- rip[c(which(rip$Genus == "Acer")),]
+top5 <- rbind(top5,rip[c(which(rip$Genus == "Quercus")),])
+top5 <- rbind(top5,rip[c(which(rip$Genus == "Populus")),])
+top5 <- rbind(top5,rip[c(which(rip$Genus == "Salix")),])
+top5 <- rbind(top5,rip[c(which(rip$Genus == "Fraxinus")),])
+top5 <- droplevels(top5)
+rip <- top5
+rm(top5)
+
+#ADD HEIGHT AS CM
+rip$htcm <- rip$Woody_Height_m * 100  #CONVERT TO CM
+#CLEAN DATA OF NULL VALUES
+rip <- rip[-c(which(rip$htcm > 6000)), ]
+
+#PLOT DEM RASTER DATA
+filename = "DEM.tif"
+gdal_grid = readGDAL(filename)
+DEM = raster(gdal_grid) #use data as a projected raster
+plot(DEM)
+#OVERLAY PROJECT LOCATIONS
+ProjLoc <- aggregate(cbind(Latitude,Longitude) ~ ProjCode, data=rip, mean)
+codeColors = c("red","blue","green","black")
+symbols = c(17,19,15,18)
+points(ProjLoc$Longitude,ProjLoc$Latitude,col=codeColors,pch=symbols)
+legend("topright",inset=0.05,title="Project Site",levels(ProjLoc$ProjCode),pch=symbols,col=codeColors)
+
+#EXTRACT ELEVATION RASTER DATA
+rip$Elevation <- extract(DEM,cbind(rip$Longitude,rip$Latitude))
+#EXTRACT TEMPERATURE RASTER DATA
+filename = "tmean_8.tif"
+gdal_grid = readGDAL(filename)
+temperature = raster(gdal_grid) #use data as a projected raster
+rip$Temp_aug <- extract(temperature,cbind(rip$Longitude,rip$Latitude))
+#EXTRACT PRECIPITATION RASTER DATA
+#EXTRACT TEMPERATURE RASTER DATA
+filename = "precip_8.tif"
+gdal_grid = readGDAL(filename)
+precipitation = raster(gdal_grid) #use data as a projected raster
+rip$Precp_aug <- extract(precipitation,cbind(rip$Longitude,rip$Latitude))
+
+#CLEAN DATA
+rip <- rip[-c(which(rip$Elevation > 200)), ]
+
+#TEST DISTRIBUTIONS
+#hist(rip$Elevation)
+#hist(rip$Precp_aug)
+#hist(rip$Temp_aug)
+#TEMPERATURE IS SOMEWHAT NORMALLY DISTRIBUTED
+#OTHERS ARE NOT
+
+#TEST CORRELATIONS
+#cor(rip$Elevation, rip$Precp_aug) - 0.9661259
+#cor(rip$Elevation, rip$Temp_aug) - 0.5831392
+#cor(rip$Precp_aug, rip$Temp_aug) - 0.6183203
+#ELEVATION AND PRECIPITATION IS HIGHLY CORRELATED
+#OTHERS NOT SO MUCH
+
+#LINEAR MODELS
+lm.pred <- lm(htcm~Woody_DBH_cm*Genus, data=rip) #BASE PREDICTION
+lm.pred1 <- lm(htcm~Woody_DBH_cm*Genus + Latitude, data=rip) #WITH LATITUDE
+lm.pred2 <- lm(htcm~Woody_DBH_cm*Genus + Elevation, data=rip) #WITH ELEVATION
+lm.pred3 <- lm(htcm~Woody_DBH_cm*Genus + Precp_aug, data=rip) #WITH PRECIPITATION
+lm.pred4 <- lm(htcm~Woody_DBH_cm*Genus + Temp_aug, data=rip) #WITH TEMPERATURE
+
+AIC(lm.pred,lm.pred1,lm.pred2,lm.pred3,lm.pred4)
+#BASED ON THE LINEAR MODELS r SQUARED AND THE AIC VALUE, THE MODEL WITH ELEVATION IS THE BEST, BUT NOT BY MUCH
+
+#temp = subset(rip, Genus == "Quercus")
+#temp2 <- lm(temp$htcm ~ temp$Woody_DBH_cm)
+#plot(rip$Woody_DBH_cm,rip$htcm)
+#abline(coefficients(temp2))
+
+#USING MODEL WITH NEW DATA, USING BASE MODEL SO WE DONT NEED TO ADD ELEVATION DATA TO THE NEW DATA
+newData <- read.csv("new_data.csv")
+newData$htcm <- predict(lm.pred,newData)
+newData$Biomass = 705 * (0.0000334750*(newData$Woody_DBH_cm^2.33631)*(newData$htcm^0.74872))
+newData$Carbon = newData$Biomass/2
+
+#Mg of carbon per hectare
+print(sum(newData$Carbon/1000*100))
+#THIS WILL PROBABLY UNDERESTIMATE - THE  LINEAR MODEL FOR ALL TOP 5 SPECIES HAS A HIGHER INTERCEPT (HEIGHT) THAN THE LINEAR MODEL FOR QUERCUS ALONE.
+
+```
+
+## Results
+
+```{r, echo=FALSE}
+#CLEAR VARIABLES
+rm(list=ls())
+
+#install.packages("rgdal")
+library(rgdal)
+#install.packages("raster")
+library(raster)
+
+#LOAD DATA
+rip <- read.csv("riparian_cleaned.csv")
+
+#SORT OUT ONLY TOP 5 SPECIES
+top5 <- rip[c(which(rip$Genus == "Acer")),]
+top5 <- rbind(top5,rip[c(which(rip$Genus == "Quercus")),])
+top5 <- rbind(top5,rip[c(which(rip$Genus == "Populus")),])
+top5 <- rbind(top5,rip[c(which(rip$Genus == "Salix")),])
+top5 <- rbind(top5,rip[c(which(rip$Genus == "Fraxinus")),])
+top5 <- droplevels(top5)
+rip <- top5
+rm(top5)
+
+#ADD HEIGHT AS CM
+rip$htcm <- rip$Woody_Height_m * 100  #CONVERT TO CM
+#CLEAN DATA OF NULL VALUES
+rip <- rip[-c(which(rip$htcm > 6000)), ]
+
+#PLOT DEM RASTER DATA
+filename = "DEM.tif"
+gdal_grid = readGDAL(filename)
+DEM = raster(gdal_grid) #use data as a projected raster
+plot(DEM,main="Elevation")
+#OVERLAY PROJECT LOCATIONS
+ProjLoc <- aggregate(cbind(Latitude,Longitude) ~ ProjCode, data=rip, mean)
+codeColors = c("red","blue","green","black")
+symbols = c(17,19,15,18)
+points(ProjLoc$Longitude,ProjLoc$Latitude,col=codeColors,pch=symbols)
+legend("topright",inset=0.05,title="Project Site",levels(ProjLoc$ProjCode),pch=symbols,col=codeColors)
+
+#EXTRACT ELEVATION RASTER DATA
+rip$Elevation <- extract(DEM,cbind(rip$Longitude,rip$Latitude))
+#EXTRACT TEMPERATURE RASTER DATA
+filename = "tmean_8.tif"
+gdal_grid = readGDAL(filename)
+temperature = raster(gdal_grid) #use data as a projected raster
+rip$Temp_aug <- extract(temperature,cbind(rip$Longitude,rip$Latitude))
+#EXTRACT PRECIPITATION RASTER DATA
+#EXTRACT TEMPERATURE RASTER DATA
+filename = "precip_8.tif"
+gdal_grid = readGDAL(filename)
+precipitation = raster(gdal_grid) #use data as a projected raster
+rip$Precp_aug <- extract(precipitation,cbind(rip$Longitude,rip$Latitude))
+
+#CLEAN DATA
+rip <- rip[-c(which(rip$Elevation > 200)), ]
+```
+
+The temperature raster data is somewhat normally distributed, but the precipitation data is not. Elevation and precipitation data is highly correlated.
+
+The following linear models are generated:
+Base Model: height ~ DBH*Genus
+Latitude Model: height ~ DBH*Genus + Latitude
+Elevation Model: height ~ DBH*Genus + Elevation
+Precipitation Model: height ~ DBH*Genus + Precipitation
+Temperature Model: height ~ DBH*Genus + Temperature
+
+The R-squared values for each model are listed below.
+
+BASE: 0.6269
+Latitude: 0.6268
+Elevation: 0.6289
+Precipitation: 0.627
+Temperature: 0.6268
+
+The AIC values for all linear models (in the order listed above) are listed below.
+
+```{r, echo=FALSE}
+#TEST DISTRIBUTIONS
+#hist(rip$Elevation)
+#hist(rip$Precp_aug)
+#hist(rip$Temp_aug)
+#TEMPERATURE IS SOMEWHAT NORMALLY DISTRIBUTED
+#OTHERS ARE NOT
+
+#TEST CORRELATIONS
+#cor(rip$Elevation, rip$Precp_aug) - 0.9661259
+#cor(rip$Elevation, rip$Temp_aug) - 0.5831392
+#cor(rip$Precp_aug, rip$Temp_aug) - 0.6183203
+#ELEVATION AND PRECIPITATION IS HIGHLY CORRELATED
+#OTHERS NOT SO MUCH
+
+#LINEAR MODELS
+lm.pred <- lm(htcm~Woody_DBH_cm*Genus, data=rip) #BASE PREDICTION
+lm.pred1 <- lm(htcm~Woody_DBH_cm*Genus + Latitude, data=rip) #WITH LATITUDE
+lm.pred2 <- lm(htcm~Woody_DBH_cm*Genus + Elevation, data=rip) #WITH ELEVATION
+lm.pred3 <- lm(htcm~Woody_DBH_cm*Genus + Precp_aug, data=rip) #WITH PRECIPITATION
+lm.pred4 <- lm(htcm~Woody_DBH_cm*Genus + Temp_aug, data=rip) #WITH TEMPERATURE
+
+print(AIC(lm.pred,lm.pred1,lm.pred2,lm.pred3,lm.pred4))
+#BASED ON THE LINEAR MODELS r SQUARED AND THE AIC VALUE, THE MODEL WITH ELEVATION IS THE BEST, BUT NOT BY MUCH
+
+#temp = subset(rip, Genus == "Quercus")
+#temp2 <- lm(temp$htcm ~ temp$Woody_DBH_cm)
+#plot(rip$Woody_DBH_cm,rip$htcm)
+#abline(coefficients(temp2))
+```
+
+Since the models are all relatively the same and there is no significant improvement in predictive quality by adding extra terms, I use the base model for height predictions.
+
+Using this model, I predict the heights of trees and use the heights to estimate the above ground carbon stocks of trees at a new site (samples from 10m x 10m plot). Assuming 50% tree volume is carbon and based on the density of carbon and extrapolating this 10m x 10m plot to a hectare, I calculate 74,230 Mg of above ground carbon per hectare at the new site.
+
+```{r, echo=FALSE}
+#USING MODEL WITH NEW DATA, USING BASE MODEL SO WE DONT NEED TO ADD ELEVATION DATA TO THE NEW DATA
+newData <- read.csv("new_data.csv")
+newData$htcm <- predict(lm.pred,newData)
+newData$Biomass = 705 * (0.0000334750*(newData$Woody_DBH_cm^2.33631)*(newData$htcm^0.74872))
+newData$Carbon = newData$Biomass/2
+
+#Mg of carbon per hectare
+print(sum(newData$Carbon/1000*100))
+#THIS WILL PROBABLY UNDERESTIMATE - THE  LINEAR MODEL FOR ALL TOP 5 SPECIES HAS A HIGHER INTERCEPT (HEIGHT) THAN THE LINEAR MODEL FOR QUERCUS ALONE.
+
+```
+
+## Discussion
+This calculation probably underestimates the total carbon stocks. To predict within a certain confidence interval, I can use the "level" key in the predict function.
+
+## Limitations
+The above ground tree-volume equation I am using is for valley oaks. I am extrapolating this equation to all riparian trees counted.
+Assumption of 50% above ground volume is carbon.

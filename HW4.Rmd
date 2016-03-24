@@ -208,6 +208,8 @@ Lastly is the ANCOVA plot by Genus.
 #install.packages("HH")
 library(HH)
 ancovaplot(htcm ~ Woody_DBH_cm + Genus, data=rip)
+
+ancovaplot(htcm ~ Woody_DBH_cm*Genus, data=rip)
 ```
 
 ## Discussion
