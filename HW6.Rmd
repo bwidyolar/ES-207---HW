@@ -1,0 +1,303 @@
+---
+output: html_document
+---
+<p align="right">Bennett Widyolar<br>
+ES 207 - HW #6<br>
+4/1/2016</p>
+
+<center>
+# Homework Assignment 6
+</center>
+
+## Objective
+The objective of this study is to validate independent hydrogeomorphic type labels assigned to a select set of meadows in the Sierra Nevada. Validation will be performed by cluster analysis across several important variables.
+
+## Methods
+This study will be carried out by analyzing data from selected meadow sites across the Sierra Nevada. Cluster computations, performed in R, (hierarchical clustering and k-means clustering) will be used along with principal component analylsis for each cluster for a set of measured data determined to be important.
+
+## Data
+Meadow data comes from the following source:
+Fryjoff-Hung & Viers, 2012. Sierra Nevada Multi-Source Meadow Polygons Compilation (v 1.0), Center for Watershed Sciences, UC Davis. December  2012. http://meadows.ucdavis.edu/
+
+DEM data for California is also used, over which meadow location and cluster attributes are plotted.
+
+## Code
+The code for this project is as follows:
+
+```{r, eval=FALSE}
+#CLEAR VARIABLES
+rm(list=ls())
+frame()
+
+#install.packages("foreign")
+library(foreign)
+#install.packages("rgdal")
+library(rgdal)
+#install.packages("raster")
+library(raster)
+
+#LOAD DBF FILE
+meadows <- read.dbf('Sierra_Nevada_MultiSource_Meadow_Polygons_Compilation_v1.dbf')
+
+#SUBSET TO RECORDS HAVING HGM VALUES
+meadows <- subset(meadows, !is.na(HGM_TYPE))
+
+#FORMATE DATA FRAME COLUMNS
+meadows$area.sqkm = meadows[,"Shape_Area"]/1000000 # m^2 to km^2
+meadows$catch.sqkm = meadows[,"CATCHMENT_"]/1000000# m^2 to km^2
+meadows$elev_m = meadows[,"ELEV_MEAN"]
+meadows$elev_r = meadows[,"ELEV_RANGE"]
+meadows$lat_dd = meadows[,"LAT_DD"]
+meadows$lon_dd = meadows[,"LONG_DD"]
+meadows$slope.pct = meadows[,"FLOW_SLOPE"]
+meadows$edge.comp = meadows[,"EDGE_COMPL"]
+meadows$clay = meadows[,"ClayTot_r"]
+meadows$soil.kf = meadows[,"Kf"]
+
+#NOTE RELEVANT COLUMNS
+rel_cols = c("area.sqkm", "catch.sqkm", "elev_m", "elev_r", "lat_dd", "lon_dd", "slope.pct", "edge.comp", "clay", "soil.kf")
+
+pairs(~area.sqkm + catch.sqkm + elev_m + elev_r + lat_dd + lon_dd + slope.pct + edge.comp + clay + soil.kf,data=meadows)
+#pairs(meadows[rel_cols],data=meadows) -> produces 50+ warnings!
+
+
+#dist using euclidean
+meadows.dist <- dist(x = meadows[,rel_cols],method = "euclidean")
+#hclust using ward.D
+meadows.hc <- hclust(meadows.dist,method="ward.D")
+
+####################################### HIERARCHICAL CLUSTERING
+
+#PLOT WITH RECTANGLES AROUND CLUSTERS
+plot(meadows.hc)
+rect.hclust(meadows.hc, k=6)
+
+#STORE CLUSTER GROUP NUMBER IN DATA FRAME
+meadows$hc6 <- cutree(meadows.hc, k=6)
+
+######################################### K MEANS CLUSTERING
+
+#K MEANS CLUSTERING
+meadows.km6 <- kmeans(meadows[,rel_cols],centers =6)
+#STORE GROUP #
+meadows$km6 <- meadows.km6$cluster
+
+#COMPARE CLUSTERING METHODS
+table(meadows$hc6, meadows$km6)
+
+gdal_grid = readGDAL("DEM.tif")
+DEM = raster(gdal_grid) #use data as a projected raster
+plot(DEM, col=gray.colors(10, start=0.9, end=0.3),main="Hierarchical Cluster Locations")
+
+#PLOT HC CLUSTERS
+codeColors = c("red","blue","green","black","orange","yellow")
+points(meadows$lon_dd,meadows$lat_dd,col=codeColors[meadows$hc6],pch=20)
+#DOUBLE CHECK BELOW
+#clusters <- aggregate(cbind(lat_dd,lon_dd) ~ hc6, data=meadows, mean)
+#points(clusters$lon_dd,clusters$lat_dd,col=codeColors,pch=15)
+
+#PLOT KMEANS CLUSTERS
+plot(DEM, col=gray.colors(10, start=0.9, end=0.3),main="K-Means Cluster Locations")
+points(meadows$lon_dd,meadows$lat_dd,col=codeColors[meadows$km6],pch=20)
+#DOUBLE CHECK BELOW
+#clusters <- aggregate(cbind(lat_dd,lon_dd) ~ km6, data=meadows, mean)
+#points(clusters$lon_dd,clusters$lat_dd,col=codeColors,pch=15)
+
+
+#########################       PRINCIPAL COMPONENT ANALYSIS - PCA
+
+meadows.pca <- prcomp(x = meadows[,rel_cols], scale=TRUE, retx = TRUE, center = TRUE, scores=TRUE)
+print("Principal Component Analylsis")
+print(summary(meadows.pca))
+
+plot(meadows.pca,type="lines")
+
+print(meadows.pca$rotation)
+
+biplot(meadows.pca, choices=1:2, cex=0.5, xlim=c(-0.1,0.2), ylim=c(-0.1,0.2))
+biplot(meadows.pca, choices=2:3, cex=0.5, xlim=c(-0.1,0.3), ylim=c(-0.12,0.2))
+biplot(meadows.pca, choices=3:4, cex=0.5, xlim=c(-0.12,0.25), ylim=c(-0.12,0.2))
+biplot(meadows.pca, choices=4:5, cex=0.5, xlim=c(-0.2,0.25), ylim=c(-0.12,0.35))
+
+pairs(meadows.pca$x[,1:5],col=meadows$km6)
+pairs(meadows.pca$x[,1:5],col=meadows$hc6)
+
+#CONTINGENCY ANALYSIS
+print(table(meadows$HGM_TYPE,meadows$km6))
+print(table(meadows$HGM_TYPE,meadows$hc6))
+
+chisq.test(meadows$HGM_TYPE,meadows$km6)
+chisq.test(meadows$HGM_TYPE,meadows$hc6)
+
+print(table(meadows$DOM_ROCKTY,meadows$km6))
+print(table(meadows$VEG_MAJORI,meadows$km6))
+
+chisq.test(meadows$DOM_ROCKTY,meadows$km6)
+chisq.test(meadows$VEG_MAJORI,meadows$km6)
+
+#SUMMARIZE DATA BY NATIONAL FOREST AND CLUSTER TYPE
+ownership <- aggregate(AREA_ACRE ~ km6+OWNERSHIP, data=meadows, sum)
+```
+
+## Results
+
+Note: "!is.na()" means -> IS NOT NULL
+
+```{r, echo=FALSE}
+#CLEAR VARIABLES
+rm(list=ls())
+frame()
+
+#install.packages("foreign")
+library(foreign)
+#install.packages("rgdal")
+library(rgdal)
+#install.packages("raster")
+library(raster)
+
+#LOAD DBF FILE
+meadows <- read.dbf('Sierra_Nevada_MultiSource_Meadow_Polygons_Compilation_v1.dbf')
+
+#SUBSET TO RECORDS HAVING HGM VALUES
+meadows <- subset(meadows, !is.na(HGM_TYPE))
+
+#FORMATE DATA FRAME COLUMNS
+meadows$area.sqkm = meadows[,"Shape_Area"]/1000000 # m^2 to km^2
+meadows$catch.sqkm = meadows[,"CATCHMENT_"]/1000000# m^2 to km^2
+meadows$elev_m = meadows[,"ELEV_MEAN"]
+meadows$elev_r = meadows[,"ELEV_RANGE"]
+meadows$lat_dd = meadows[,"LAT_DD"]
+meadows$lon_dd = meadows[,"LONG_DD"]
+meadows$slope.pct = meadows[,"FLOW_SLOPE"]
+meadows$edge.comp = meadows[,"EDGE_COMPL"]
+meadows$clay = meadows[,"ClayTot_r"]
+meadows$soil.kf = meadows[,"Kf"]
+
+#NOTE RELEVANT COLUMNS
+rel_cols = c("area.sqkm", "catch.sqkm", "elev_m", "elev_r", "lat_dd", "lon_dd", "slope.pct", "edge.comp", "clay", "soil.kf")
+
+print("Exploratory plotting of relationships between relevant variables")
+
+pairs(~area.sqkm + catch.sqkm + elev_m + elev_r + lat_dd + lon_dd + slope.pct + edge.comp + clay + soil.kf,data=meadows)
+```
+
+Hierarchical clustering is performed for 6 clusters.
+
+```{r, echo=FALSE}
+#dist using euclidean
+meadows.dist <- dist(x = meadows[,rel_cols],method = "euclidean")
+#hclust using ward.D
+meadows.hc <- hclust(meadows.dist,method="ward.D")
+
+####################################### HIERARCHICAL CLUSTERING
+
+#PLOT WITH RECTANGLES AROUND CLUSTERS
+plot(meadows.hc)
+rect.hclust(meadows.hc, k=6)
+
+#STORE CLUSTER GROUP NUMBER IN DATA FRAME
+meadows$hc6 <- cutree(meadows.hc, k=6)
+######################################### K MEANS CLUSTERING
+
+#K MEANS CLUSTERING
+meadows.km6 <- kmeans(meadows[,rel_cols],centers =6)
+#STORE GROUP #
+meadows$km6 <- meadows.km6$cluster
+
+gdal_grid = readGDAL("DEM.tif")
+DEM = raster(gdal_grid) #use data as a projected raster
+plot(DEM, col=gray.colors(10, start=0.9, end=0.3),main="Hierarchical Cluster Locations")
+
+#PLOT HC CLUSTERS
+codeColors = c("red","blue","green","black","orange","yellow")
+points(meadows$lon_dd,meadows$lat_dd,col=codeColors[meadows$hc6],pch=20)
+#DOUBLE CHECK BELOW
+#clusters <- aggregate(cbind(lat_dd,lon_dd) ~ hc6, data=meadows, mean)
+#points(clusters$lon_dd,clusters$lat_dd,col=codeColors,pch=15)
+
+```
+
+As well as K-means clustering with 6 groups.
+
+```{r, echo=FALSE}
+#PLOT KMEANS CLUSTERS
+plot(DEM, col=gray.colors(10, start=0.9, end=0.3),main="K-Means Cluster Locations")
+points(meadows$lon_dd,meadows$lat_dd,col=codeColors[meadows$km6],pch=20)
+#DOUBLE CHECK BELOW
+#clusters <- aggregate(cbind(lat_dd,lon_dd) ~ km6, data=meadows, mean)
+#points(clusters$lon_dd,clusters$lat_dd,col=codeColors,pch=15)
+```
+
+A contingency table comparing the two clustering methods shows that the two methods produce the same clusters, with the exception of clusters 4 and 5 which transfer sites depending on which method is used.
+
+```{r,echo=FALSE}
+#COMPARE CLUSTERING METHODS
+table(meadows$hc6, meadows$km6)
+```
+
+Principal Component Analysis (PCA) is performed on the meadows data.
+
+```{r, echo=FALSE}
+#########################       PRINCIPAL COMPONENT ANALYSIS - PCA
+
+meadows.pca <- prcomp(x = meadows[,rel_cols], scale=TRUE, retx = TRUE, center = TRUE, scores=TRUE)
+print("Principal Component Analylsis")
+print(summary(meadows.pca))
+
+plot(meadows.pca,type="lines")
+```
+
+85% of the variance is explained within the first 5 Principal Component Axes.
+Contributions to each PCA axis by recorded variables are listed below followed by bi-plots and scatter plot matrices.
+
+```{r, ECHO=FALSE}
+
+print(meadows.pca$rotation)
+
+biplot(meadows.pca, choices=1:2, cex=0.5, xlim=c(-0.1,0.2), ylim=c(-0.1,0.2))
+biplot(meadows.pca, choices=2:3, cex=0.5, xlim=c(-0.1,0.3), ylim=c(-0.12,0.2))
+biplot(meadows.pca, choices=3:4, cex=0.5, xlim=c(-0.12,0.25), ylim=c(-0.12,0.2))
+biplot(meadows.pca, choices=4:5, cex=0.5, xlim=c(-0.2,0.25), ylim=c(-0.12,0.35))
+
+pairs(meadows.pca$x[,1:5],col=meadows$km6)
+pairs(meadows.pca$x[,1:5],col=meadows$hc6)
+```
+
+A contingency analysis is performed to compare the calculated cluster groupings with the HGM Type determined by the USFS. Tables for the HGM Type along with clusters 1-6 for the K-means and Hierarchical clustering are presented below.
+
+```{r,echo=FALSE}
+#CONTINGENCY ANALYSIS
+print(table(meadows$HGM_TYPE,meadows$km6))
+print(table(meadows$HGM_TYPE,meadows$hc6))
+```
+
+The Pearson's Chi-Squared test shows a high dependency of k-means cluster group to HGM Type.
+
+```{r,echo=FALSE}
+chisq.test(meadows$HGM_TYPE,meadows$km6)
+chisq.test(meadows$HGM_TYPE,meadows$hc6)
+```
+
+Other variables (Dominant rock type and vegetation of the meadow) are also investigated.
+
+```{r, echo=FALSE}
+print(table(meadows$DOM_ROCKTY,meadows$km6))
+print(table(meadows$VEG_MAJORI,meadows$km6))
+
+chisq.test(meadows$DOM_ROCKTY,meadows$km6)
+chisq.test(meadows$VEG_MAJORI,meadows$km6)
+```
+
+K-means cluster type is highly dependent on the dominant rock type found in the area, but not as dependent on dominant vegetation type.
+
+Lastly, the acreage of each national forest that belongs to each k-means cluster group is determined and the result is saved in the excel file - "ownership - formatted.csv"
+(I could not get a data frame to print in markdown)
+
+
+
+## Discussion
+
+These results show that yes, for most parks, they could focus on a single meadow type because most of their park acreage is dominated by one meadow type. In some cases, there are two or three meadow types that share large percentages of the total acreage and thus should both be considered for management simplification.
+
+## Limitations
+See limitations in meta file (SNMMPCv1_Metadata.txt)

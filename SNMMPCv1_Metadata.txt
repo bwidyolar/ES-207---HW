@@ -1,0 +1,310 @@
+Name: Sierra Nevada Multi-Source Meadow Polygons Compilation (v 1.0)
+Format: ESRI ArcGIS 10 File Geodatabase
+
+Summary:
+Compiled meadows layer for the Sierra Nevada containing 17,039 meadow polygons (total area = 77,659 hectares, 191,900 acres). 
+
+Citation:
+Fryjoff-Hung & Viers, 2012. Sierra Nevada Multi-Source Meadow Polygons Compilation (v 1.0), Center for Watershed Sciences, UC Davis. December  2012. http://meadows.ucdavis.edu/
+
+Contact info :
+Joshua Viers
+jhviers@ucdavis.edu 
+
+Access and use limitations 
+This is an unofficial dataset compiled from the best available sources.  The University of California, Davis makes no representations or warranties regarding the accuracy of data or maps. The user will not seek to hold the University of California, Davis liable under any circumstances for any damages with respect to any claim by the user or any third party on account of or arising from the use of data or maps. The user will cite the University of California, Davis as the original source of the data, but will clearly denote cases where the original data have been updated, modified, or in any way altered from the original condition. There are no restrictions on distribution of the data by users. 
+
+Caveats – The meadow polygons in this layer contain accuracy issues due to the variable quality of the input data.  Individual input data layers were created using the following methods: ‘heads-up’ digitization from aerial photographs (varying scales, photo years, etc.), extraction from coarse scale vegetation layers, Feature Analyst® for ArcGIS®, and field delineation using GPS devices (varying precision).  
+
+Acknowledgements
+We would like to acknowledge the following people for providing meadows data used in the Sierra Nevada Multi-Source Meadow Polygons Compilation (v 1.0):
+
+
+Nathan Amboy
+Oswaldo Angulo
+John Babin
+Eric Berlow
+Kirsten Bovee
+Cathy Brown
+Coye Burnet
+ Leslie Chow
+ Janet Coles
+Alan Doerr
+Elaine Elliott
+Shana Gross
+Sally Hallowell
+Anthony Hewitt
+Heidi Hosler
+Luke Hunt
+Erin Lutrick
+Amy Merrill
+Steve  Peaslee
+Mark Schug
+Michele Slaton
+Ed Tallyn
+Alissa Tanner
+Deb Tatman
+Heather Taylor
+Kurt Teuber
+Dave Weixelman
+Lucas Wilkinson
+
+
+
+This license covers results from the UC Davis Center for Watershed Sciences Sierra Nevada Multi-Source Meadow Polygons Compilation - maps, data, and other exports derived from the layer or available in a downloaded package that this license comes with.
+Sierra Nevada Multi-Source Meadow Polygons Compilation (v1.0) results are part of the Conservation Commons and are subject to a Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+
+
+Description
+Brief Methods: 
+UC Davis compiled the “best available” meadow polygon layers into a single data layer.  Data layers were collected from various agencies, individuals, and organizations.  Data layer quality varied based on compilation methods and age; some layers were excluded due to poor data quality. A confidence rank (1 = low, 10 = high) was assigned to the remaining layers which were rasterized at a 10m resolution.  The layers were combined and combined raster cells with a summed rank of 2 or less were excluded.  Raster cells representing open water were also excluded.  A majority filter was run on the resulting remaining cells to reduce boundary heterogeneity, which replaced cell values based on the majority of the eight neighboring cells.  Individual meadow polygons were created through a raster to vector conversion that treated all contiguous cells as a single part meadow feature with boundaries smoothed using the Polynomial Approximation with Exponential Kernel (PAEK) method (20 m tolerance to reduce edge complexity).  Polygons with an area less than 0.4 ha (< 1 acre) were removed from the final meadow composite.  Original IDs and other attributes were attached to the meadow polygons.  
+
+Meadow Polygon Attributes 
+
+Field : STATE	
+Description : State in which the meadow is located (CA or NV)
+
+Field : ID*	
+Description : Unique meadow identifier UCDSNMxxxxxx
+*Note: IDs are nonsequential*
+
+Field : HUC12	
+Description : Unique identifier for the HUC12 in which the meadow is located
+
+Field : OWNERSHIP	
+Description : Land ownership status 
+
+Field : EDGE_COMPLEXITY	
+Description : Gives an indication of the meadow's exposure to external conditions EDGE COMPLEXITY = (MEADOWperimeter/EAC perimeter) [EAC  = Equal Area Circle]
+
+Field : DOM_ROCKTYPE	
+Description : Dominant rock type on which the meadow is located
+
+Field : VEG_MAJORITY	
+Description : Vegetation majority based on the LANDFIRE layer
+
+Field : SOIL_SURVEY	
+Description : Soil survey from which COKEY, Kf, ClayTot_r, MUKEY, and COMP_NAME were assigned to each meadow (SSURGO or STATSGO depending on layer coverage)
+
+Field : MUKEY	
+Description : Mapunit Key: Unique identifier for the Mapunit in which the meadow is located
+
+Field : COKEY	
+Description : Component Key: Unique identifier for the major component of the mapunit in which the meadow is located 
+
+Field : COMP_NAME	
+Description : Component Name: Name of the soil component with the highest representative value in the mapunit in which the meadow is located 
+
+Field : Kf	
+Description : K factor: A soil erodibility factor that quantifies the susceptibility of soil particles to detachment by water.  Low: 0.05-0.2 Moderate: 0.25-0.4, High: >0.4
+
+Field : ClayTot_r	
+Description : Representative value (%) of total clay 
+
+Field : CATCHMENT_AREA	
+Description : The approximate area of the upstream catchment exiting through the meadow
+
+Field : ELEV_MEAN	
+Description : Mean elevation (m)
+
+Field : ELEV_RANGE	
+Description : Elevation range (m) across each meadow
+
+Field : FLOW_RANGE	
+Description : We ran the flow length geoprocessing tool across a statewide 30m DEM then ran Zonal Statistics for each meadow on that raster. This tool measures the number of cells from each location to the nearest ridgetop. The flow range is the range value from the zonal statistics and reflects the range of distances to ridgetop across the meadow.
+
+Field : FLOW_SLOPE	
+Description : A slope metric utilizing the range of elevation values (the rise) and the Flow Range previously described (the run). Output is effectively Range(Elevation)/Range(Flow Length to ridgetop) for each meadow.
+
+Field : ED_MIN_LAKE
+Description : Minimum Euclidean Distance (m) to lake edges
+
+Field : ED_MIN_FLOW
+Description : Minimum Euclidean Distance(m)  to NHD Streams/Rivers
+
+Field : ED_MIN_SEEP
+Description : Minimum Euclidean Distance (m) to NHD Seeps/Springs
+
+Field : ED_MIN_FStopo
+Description : Minimum Euclidean Distance (m) to Forest Service Topographic Map Data Transportation layer
+
+Field : HGM_Type
+Description : Meadow hydrogeomorphic type
+
+Field : LAT_DD	
+Description : Latitude in decimal degrees
+
+Field : LONG_DD	
+Description : Longitude in decimal degrees
+
+Field : Shape_Length	
+Description : Meadow perimeter in meters
+
+Field : Shape_Area	
+Description : Meadow area in sq. meters
+
+Field:  AREA_ACRE	
+Description : Meadow area in acres
+
+Datum/Projection 
+Projected Coordinate System: NAD_1983_California_Teale_Albers
+Projection: Albers
+False Easting: 0.00000000
+False Northing:	 -4000000.00000000
+Central Meridian: -120.00000000
+Standard Parallel 1: 34.00000000
+Standard Parallel 2: 40.50000000
+Latitude of Origin: 0.00000000
+Linear Unit:  Meter
+
+Compiled Sources
+
+Layer: AMPH
+Source: Stanislaus National Forest
+Coverage: Sierra Nevada
+
+Layer: AMR	
+Source: American Rivers	
+Coverage: Yuba and Mokelumne watersheds
+
+Layer: CALVEG	
+Source: USFS Region 5 Clearinghouse	
+Coverage: Sierra Nevada
+
+Layer: ENFa	
+Source: Eldorado National Forest	
+Coverage: Eldorado National Forest
+
+Layer: INFa	
+Source: Inyo National Forest	
+Coverage: Inyo National Forest
+
+Layer: INFb	
+Source: Inyo National Forest	
+Coverage: Inyo National Forest
+
+Layer: INFd	
+Source: Inyo National Forest	
+Coverage: Inyo National Forest
+
+Layer: INFe	
+Source: Inyo National Forest	
+Coverage: Inyo National Forest
+
+Layer: INFf	
+Source: Inyo National Forest	
+Coverage: Kern Plateau
+
+Layer: JMAA	
+Source: Inyo National Forest	
+Coverage: John Muir and Ansel Adams Wilderness
+
+Layer: LAVO*	
+Source: Lassen Volcanic National Park	
+Coverage: Lassen Volcanic National Park
+
+Layer: LNFa	
+Source: Lassen National Forest	
+Coverage:  Lassen National Forest
+
+Layer: LNFc	
+Source: Lassen National Forest	
+Coverage: Lassen National Forest
+
+Layer: LNFd	
+Source: Lassen National Forest	
+Coverage: Lassen National Forest
+
+Layer: NHD	
+Source: USGS - National Hydrography Dataset	
+Coverage: Sierra Nevada
+
+Layer: NWI	
+Source: USFWS - National Wetlands Inventory	
+Coverage: Sierra Nevada
+
+Layer: PNFa	
+Source: Plumas National Forest	
+Coverage: Plumas National Forest
+
+Layer: SEKIa	
+Source: UC Merced	
+Coverage: Sequoia Kings Canyon National Park
+
+Layer: SNFa	
+Source: Sierra National Forest	
+Coverage: Sierra National Forest
+
+Layer: SQFa	
+Source: Sequoia National Forest	
+Coverage: Sequoia National Forest
+
+Layer: STFa	
+Source: Stanislaus National Forest	
+Coverage: Stanislaus National Forest
+
+Layer: STI	
+Source: Stillwater Sciences	
+Coverage: Sierra Nevada
+
+Layer: TMUa	
+Source: Lake Tahoe Basin Management Unit	
+Coverage: LTBMU
+
+Layer: TMUb	
+Source: Lake Tahoe Basin Management Unit	
+Coverage: LTBMU
+
+Layer: TMUc	
+Source: Lake Tahoe Basin Management Unit	
+Coverage: LTBMU
+
+Layer: TNFa*	
+Source: Tahoe National Forest	
+Coverage: Tahoe National Forest
+
+Layer: TNFb	
+Source: Tahoe National Forest	
+Coverage: Tahoe National Forest
+
+Layer: UCD	
+Source: UC Davis	
+Coverage: Sierra Nevada
+
+Layer: WEIX	
+Source: USFS Region 5 Range	
+Coverage: Sierra Nevada
+
+Layer: WIFL	
+Source: USFS Region 5 Clearinghouse	
+Coverage: Sierra Nevada
+
+Layer: YOSEa	
+Source: UC Merced	
+Coverage: Yosemite National Park
+
+*Restricted layer use*
+
+Expanded Methods
+Sierra Nevada Multi-Source Meadow Polygons Compilation
+We used ArcGIS v10 (ESRI, Redlands, CA, USA) for all geoprocessing.
+A total of 44 meadows layers were collected from various individuals, agencies, and organizations. Layers varied in number of features and feature topology (i.e., points, lines, and polygons), meadow type (e.g., wet meadow, dry meadow, fen, etc.), extent (local vs. study area wide), method of creation (digitized from aerial photographs, geolocated (i.e., GPS’d), extracted from GIS layers, Feature Analyst), purpose, and accuracy. All layers were examined for completeness, attribution, and spatial precision.  High quality data layers were selected for use in the composite data set, and in few cases selected features were extracted to represent restricted spatial extents. In other cases, selected point layers were used to generate representative polygons using high resolution aerial imagery (<= 1 m pixels). We deemed 32 meadows layers suitable for compilation (Compiled Sources Table).
+We examined each layer, removed any duplicate features, and assigned a confidence rank based on source, method of creation, representativeness (feature accuracy), and spatial precision.    Confidence ranks were assigned as either 1 (low) or 10 (high). Highly ranking layers were often created in the field by trained personnel using survey grade global position system receivers, whereas low ranking layers were often of large extent and high number of polygons (which decreased certainty that each individual polygon was an actual meadow) but whose polygons were generally accurate.  All layers were reprojected into the NAD 1983 California Teale Albers coordinate system.  Each layer was then rasterized (retaining the confidence rank) and snapped to a 10m digital elevation model of the study area to serve as geographic control.  Raster cells representing open water from the National Hydrography Dataset (NHD) were removed, and resulting cells with ranks were summed. Only cells with a summed rank >2 were retained for further processing. A majority filter was run on the resulting remaining cells to reduce boundary heterogeneity, which replaced cell values based on the majority of the eight neighboring cells.  Individual meadow polygons were created through a raster to vector conversion that treated all contiguous cells as a single part meadow feature with boundaries smoothed using the Polynomial Approximation with Exponential Kernel (PAEK; ArcGIS) method (20 m tolerance to reduce edge complexity).  Polygons with an area less than 0.4 ha (< 1 acre) were removed from the final meadow composite, and lastly all remaining meadow features were assigned a unique identifier and cross-walked to original source layers.  
+Additional Attributes
+
+Geology: Dominant rock type was attributed to the meadow polygons based on available state geology layers.  Using the Identity (Analysis) tool in ArcGIS, the most abundant lithology in the map unit (ROCK_1) was identified for each meadow.   
+
+Vegetation: The LANDFIRE dataset was used to attribute generalized vegetation (GROUPVEG) to the meadow polygons.  
+
+Soils: SSURGO datasets were compiled for the entirety of the study area.  Gaps were filled with compiled STATSGO data.  Soil attributes include: COKEY (component key), Kf (soil erodibility factor), Clay_tot_r (representative value of total clay), map unit key (MUKEY), component name (COMP_NAME).  Components were assigned based on the soil component with the highest representative value in the map unit in which the meadow was located.  For each component, the clay and Kf values from the top-most horizon were assigned to each meadow polygon.  
+
+ Flow Length: We ran the flow length geoprocessing tool across a state-wide 30m DEM then ran Zonal Statistics for each meadow on that raster. This tool measures the number of cells from each location to the nearest ridgetop. The flow range is the range value from the zonal statistics and reflects the range of distances to ridgetop across the meadow.
+
+Flow Slope: A slope metric utilizing the range of elevation values (the rise) and the Flow Range previously described (the run). Output is effectively Range (Elevation) / Range (Flow Length to ridgetop) for each meadow.
+
+Catchment Area: The approximate area of the upstream catchment exiting through the meadow. This is obtained by taking the highest value of a flow accumulation raster within the meadow and multiplying it by the raster's cell size. Not every meadow uses the same raster for calculations. Most meadows utilized the NHDPlus Version 1 30m Flow accumulation rasters and were automatically assigned to the appropriate raster based on geography. Due to an error in the Honey Lake area, meadows along or very near the Susan Rivers, the North Fork Feather River, and the Sacramento River downstream of the confluence with the Feather River used a separate, less accurate flow accumulation raster we developed from a California-wide 30m DEM.
+
+Euclidean Distance: Using the Euclidean Distance (Spatial Analyst) tool in ArcGIS, the minimum distance to each meadow was calculated for NHD Springs/Seeps, NHD Streams/Rivers, CA lakes, and FS Topographic Transportation. 
+
+HGM Type: Assigned based on plot coordinates provided by Dave Weixelman (USFS) for 438 meadows.  
+
