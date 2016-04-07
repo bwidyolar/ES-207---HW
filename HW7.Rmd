@@ -1,0 +1,182 @@
+---
+output: html_document
+---
+<p align="right">Bennett Widyolar<br>
+ES 207 - HW #7<br>
+4/7/2016</p>
+
+<center>
+# Homework Assignment 7
+</center>
+
+## Objective
+The objective of this study is to determine the percentage of years it floods more than 100 days (floods defined as discharges >= 800 cubic feet per second) along the Cosumnes River, to assist the California Department of Water Resources in determining whether or not setback levee construction is a good use of Prop. 1 funds for the purpose of groundwater recharge.
+
+## Methods
+In this study, we will analyze discharge measurements along the Cosumnes River to determine the number of flood events per year. The percentage of years having greater than 100 flood days will be reported back to the DWR.
+
+## Data
+The data used has been collected by the USGS since 1907 for the following site:
+Site #: 11335000
+Site Name: Michigan Bar
+Sensor: Discharge, cubic feet per second (mean)
+
+It is available at the following url: http://waterdata.usgs.gov/nwis/dv?cb_00060=on&format=rdb&site_no=11335000&referred_module=sw&period=&begin_date=1907-10-01&end_date=2015-09-30
+
+## Code
+The code for this project is as follows:
+
+```{r, eval=FALSE}
+#CLEAR VARIABLES
+rm(list=ls())
+
+site='11335000'
+sensor='00060'
+start='1907-10-01'
+end='2015-09-30'
+
+data <- read.table(paste("http://waterdata.usgs.gov/nwis/dv?cb_",sensor,"=on&format=rdb&site_no=", site,"&referred_module=sw&period=&begin_date=",start,"&end_date=", end, sep=""),
+                   header=T, sep="", quote="'", skip=0, colClasses = c("factor", "factor", "factor", "factor", "factor"))
+print('DONE')
+
+#REMOVE JUNK DATA FROM FIRST ROW
+data = droplevels(data[-1,])
+#RENAME LAST TWO COLUMNS
+colnames(data)[4:5]= c("discharge_cfs","dat_qvalue")
+
+data$datetime = as.POSIXct(data$datetime, "America/Los_Angeles")
+data$discharge_cfs = as.double(as.character(data$discharge_cfs))
+
+data$discharge_afd = data$discharge_cfs*1.98347
+#NOTE POSSIBLE OUTLIER - 122,200 AF/Day?
+
+#WATER YEAR
+data$year = as.numeric(substr(data$datetime,1,4))
+data$month = as.numeric(substr(data$datetime,6,7))
+data$day = as.numeric(substr(data$datetime,9,11))
+data$wy = ifelse(data$month > 9, data$year +1, data$year)
+data$wym = ifelse(data$month > 9, data$month - 9, data$month + 3)
+
+#REMOVE LEAP YEAR
+data <- data[!(data$month ==2 & data$day == 29),]
+
+#TOTAL DISCHARGE BY MONTH
+data.mo.afd.sum = ts(as.vector(tapply(data$discharge_afd,list(data$wym,data$wy),sum)),frequency=12)
+data.mo.afd.mean = ts(as.vector(tapply(data$discharge_afd,list(data$wym,data$wy),mean)),frequency=12)
+data.mo.afd.max = ts(as.vector(tapply(data$discharge_afd,list(data$wym,data$wy),max)),frequency=12)
+data.mo.cfs.mean = ts(as.vector(tapply(data$discharge_cfs,list(data$wym,data$wy),mean)),frequency=12)
+data.mo.cfs.max = ts(as.vector(tapply(data$discharge_cfs,list(data$wym,data$wy),max)),frequency=12)
+
+data.yr.afd.sum = ts(as.vector(tapply(data$discharge_afd,list(data$wy),sum)),frequency=1)
+data.yr.afd.mean = ts(as.vector(tapply(data$discharge_afd,list(data$wy),mean)),frequency=1)
+
+#DRIEST YEAR
+index_min = which.min(data.yr.afd.sum)
+plot(data.mo.afd.mean[(index_min*12+1):(index_min*12+12)], type="o")
+#WETTEST YEAR
+index_max = which.max(data.yr.afd.sum)
+plot(data.mo.afd.mean[(index_max*12+1):(index_max*12+12)], type="o")
+#HIGHEST DAILY AVERAGE DISCHARGE
+index_discharge = which.max(data.yr.afd.mean)
+plot(data.mo.afd.mean[(index_discharge*12+1):(index_discharge*12+12)], type="o")
+
+plot(stl(data.mo.afd.mean,s.window="periodic"))
+plot(acf(data.mo.afd.mean))
+
+#FLOODS
+plot(data$discharge_cfs)
+threshold = 800
+abline(h=threshold, col="red")
+
+data$flood <- data$discharge_cfs >= threshold
+data.yr.flood.sum <- ts(as.vector(tapply(data$flood, list(data$wy),sum)), start=1907)
+print(sum(data.yr.flood.sum >= 100)/length(data.yr.flood.sum))
+```
+
+## Results
+
+```{r, echo=FALSE}
+#CLEAR VARIABLES
+rm(list=ls())
+
+site='11335000'
+sensor='00060'
+start='1907-10-01'
+end='2015-09-30'
+
+data <- read.table(paste("http://waterdata.usgs.gov/nwis/dv?cb_",sensor,"=on&format=rdb&site_no=", site,"&referred_module=sw&period=&begin_date=",start,"&end_date=", end, sep=""),
+                   header=T, sep="", quote="'", skip=0, colClasses = c("factor", "factor", "factor", "factor", "factor"))
+print('DONE')
+
+#REMOVE JUNK DATA FROM FIRST ROW
+data = droplevels(data[-1,])
+#RENAME LAST TWO COLUMNS
+colnames(data)[4:5]= c("discharge_cfs","dat_qvalue")
+
+data$datetime = as.POSIXct(data$datetime, "America/Los_Angeles")
+data$discharge_cfs = as.double(as.character(data$discharge_cfs))
+
+data$discharge_afd = data$discharge_cfs*1.98347
+#NOTE POSSIBLE OUTLIER - 122,200 AF/Day?
+
+#WATER YEAR
+data$year = as.numeric(substr(data$datetime,1,4))
+data$month = as.numeric(substr(data$datetime,6,7))
+data$day = as.numeric(substr(data$datetime,9,11))
+data$wy = ifelse(data$month > 9, data$year +1, data$year)
+data$wym = ifelse(data$month > 9, data$month - 9, data$month + 3)
+
+#REMOVE LEAP YEAR
+data <- data[!(data$month ==2 & data$day == 29),]
+
+#TOTAL DISCHARGE BY MONTH
+data.mo.afd.sum = ts(as.vector(tapply(data$discharge_afd,list(data$wym,data$wy),sum)),frequency=12)
+data.mo.afd.mean = ts(as.vector(tapply(data$discharge_afd,list(data$wym,data$wy),mean)),frequency=12)
+data.mo.afd.max = ts(as.vector(tapply(data$discharge_afd,list(data$wym,data$wy),max)),frequency=12)
+data.mo.cfs.mean = ts(as.vector(tapply(data$discharge_cfs,list(data$wym,data$wy),mean)),frequency=12)
+data.mo.cfs.max = ts(as.vector(tapply(data$discharge_cfs,list(data$wym,data$wy),max)),frequency=12)
+
+data.yr.afd.sum = ts(as.vector(tapply(data$discharge_afd,list(data$wy),sum)),frequency=1)
+data.yr.afd.mean = ts(as.vector(tapply(data$discharge_afd,list(data$wy),mean)),frequency=1)
+
+#DRIEST YEAR
+index_min = which.min(data.yr.afd.sum)
+plot(data.mo.afd.mean[(index_min*12+1):(index_min*12+12)], type="o", main="Driest Year Hydrograph - 1976")
+#WETTEST YEAR
+index_max = which.max(data.yr.afd.sum)
+plot(data.mo.afd.mean[(index_max*12+1):(index_max*12+12)], type="o", main="Wettest Year Hydrograph - 1982")
+#HIGHEST DAILY AVERAGE DISCHARGE
+index_discharge = which.max(data.yr.afd.mean)
+plot(data.mo.afd.mean[(index_discharge*12+1):(index_discharge*12+12)], type="o", main="Hydrograph of year with highest daily average discharge - 1982")
+```
+
+The following charts depict the temporal autocorrelation in the monthly discharge.
+There is clearly a seasonal pattern (sine wave), with high discharge in the spring and summer and low discharge during the fall and winter, that repeats on a yearly basis.
+
+```{r, echo=FALSE}
+plot(stl(data.mo.afd.mean,s.window="periodic"))
+plot(acf(data.mo.afd.mean))
+```
+
+Flood analysis is performed below. The hydrograph (Daily) since 1907 is plotted along with the drawn threshold of 800 cfs at which a day is counted as a flood event.
+
+```{r, echo=FALSE}
+#FLOODS
+plot(data$discharge_cfs)
+threshold = 800
+abline(h=threshold, col="red")
+```
+
+The percentage of years from 1907-2015 with more than 100 flood events is evaluated below.
+```{r,echo=FALSE}
+data$flood <- data$discharge_cfs >= threshold
+data.yr.flood.sum <- ts(as.vector(tapply(data$flood, list(data$wy),sum)), start=1907)
+print(sum(data.yr.flood.sum >= 100)/length(data.yr.flood.sum))
+```
+
+## Discussion
+
+The results show that slightly less than 1/3 of all years flood for more than 100 days. Thus, based on the > 1/3 of years, setback levee construction will probably not be pursued under Prop 1. funds.
+
+## Limitations
+See header of data file: http://waterdata.usgs.gov/nwis/dv?cb_00060=on&format=rdb&site_no=11335000&referred_module=sw&period=&begin_date=1907-10-01&end_date=2015-09-30
