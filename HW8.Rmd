@@ -1,0 +1,103 @@
+---
+output: html_document
+---
+<p align="right">Bennett Widyolar<br>
+ES 207 - HW #8<br>
+4/13/2016</p>
+
+<center>
+# Homework Assignment 8
+</center>
+
+## Objective
+The objective of this study is to provide followup information towards determining whether setback levees are a good use of Prop. 1 funds by assessing whether or not the water quality of floodplains is conducive to fish growth.
+
+## Methods
+In this study we analyze the quality of water at the Triangle Floodplain, just north of the Accidental Forest in the Cosumnes River Preserve.
+
+## Data
+The data used for this analysis came from the shape file: allobs.shp, downloaded from this course website.
+
+## Code
+The code for this project is as follows:
+
+```{r, eval=FALSE}
+#CLEAR VARIABLES
+rm(list=ls())
+#RESET PLOT
+par(mfrow=c(1,1))
+
+#install.packages("maptools")
+#install(akima)
+library(maptools)
+library(akima)
+
+pt.shp <- readShapePoints("ahearn_allobs/allobs")
+
+pt.shp.18 <- subset(pt.shp, DateTime_ == "2005-02-18")
+pt.shp.23 <- subset(pt.shp, DateTime_ == "2005-02-23")
+
+pt.shp.18.temp <- interp(pt.shp.18$X, pt.shp.18$Y, pt.shp.18$Temp, duplicate="mean")
+pt.shp.18.chlo <- interp(pt.shp.18$X, pt.shp.18$Y, pt.shp.18$Chlorophyl, duplicate="mean")
+pt.shp.18.do <- interp(pt.shp.18$X, pt.shp.18$Y, pt.shp.18$DO__, duplicate="mean")
+
+par(mfrow=c(2,3))
+
+image(pt.shp.18.temp, col=cm.colors(24))
+contour(pt.shp.18.temp, add=T)
+image(pt.shp.18.chlo, col=topo.colors(24))
+contour(pt.shp.18.chlo, add=T)
+image(pt.shp.18.do, col=heat.colors(24))
+contour(pt.shp.18.do, add=T)
+
+persp(pt.shp.18.temp, theta=-50, phi=45, col="lightblue",zlab="Temp C", xlab="UTM X (m)", ylab="UTM Y (m)")
+persp(pt.shp.18.chlo, theta=-50, phi=45, col="lightblue",zlab="Chlorophyll mg/L", xlab="UTM X (m)", ylab="UTM Y (m)")
+persp(pt.shp.18.do, theta=-50, phi=45, col="lightblue",zlab="Dissolved Oxygen mg/L", xlab="UTM X (m)", ylab="UTM Y (m)")
+
+
+```
+
+## Results
+
+The following charts plot the Temperature, Chlorophyll concentration, and Dissolved Oxygen measurements in the Triangle Floodplain.
+
+```{r, echo=F}
+#CLEAR VARIABLES
+rm(list=ls())
+#RESET PLOT
+par(mfrow=c(1,1))
+
+#install.packages("maptools")
+#install(akima)
+library(maptools)
+library(akima)
+
+pt.shp <- readShapePoints("ahearn_allobs/allobs")
+
+pt.shp.18 <- subset(pt.shp, DateTime_ == "2005-02-18")
+pt.shp.23 <- subset(pt.shp, DateTime_ == "2005-02-23")
+
+pt.shp.18.temp <- interp(pt.shp.18$X, pt.shp.18$Y, pt.shp.18$Temp, duplicate="mean")
+pt.shp.18.chlo <- interp(pt.shp.18$X, pt.shp.18$Y, pt.shp.18$Chlorophyl, duplicate="mean")
+pt.shp.18.do <- interp(pt.shp.18$X, pt.shp.18$Y, pt.shp.18$DO__, duplicate="mean")
+
+par(mfrow=c(2,3))
+
+image(pt.shp.18.temp, col=cm.colors(24))
+contour(pt.shp.18.temp, add=T)
+image(pt.shp.18.chlo, col=topo.colors(24))
+contour(pt.shp.18.chlo, add=T)
+image(pt.shp.18.do, col=heat.colors(24))
+contour(pt.shp.18.do, add=T)
+
+persp(pt.shp.18.temp, theta=-50, phi=45, col="lightblue",zlab="Temp C", xlab="UTM X (m)", ylab="UTM Y (m)")
+persp(pt.shp.18.chlo, theta=-50, phi=45, col="lightblue",zlab="Chlorophyll mg/L", xlab="UTM X (m)", ylab="UTM Y (m)")
+persp(pt.shp.18.do, theta=-50, phi=45, col="lightblue",zlab="Dissolved Oxygen mg/L", xlab="UTM X (m)", ylab="UTM Y (m)")
+
+
+```
+
+Additionally, an interactive Shiny App is developed and allows the user to view water quality information for different days (see Shiny App files: ui.R and server.R)
+
+## Limitations
+Duplicate points in the shapefile are averaged.
